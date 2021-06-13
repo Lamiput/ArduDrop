@@ -1,0 +1,76 @@
+================================================================================
+Droplet Serial Communication Protocol
+================================================================================
+
+Purpose of this document
+--------------------------------------------------------------------------------
+The controller has no physical interface for configuration
+Therefore the configuration is send via this serial protocol
+All commands end with newline "\n"
+All times in milliseconds
+
+
+Droplet Message Format
+--------------------------------------------------------------------------------
+Command          = SetCommand | RunCommand | HighCommand | LowCommand | InfoCommand | ClearCommand | CancelCommand 
+
+SetCommand       = "S" FieldSeparator DeviceConfig
+RunCommand       = "R" FieldSeparator { Passes { FieldSeparator Delay } }
+HighCommand      = "H" FieldSeparator DeviceNumber
+LowCommand       = "L" FieldSeparator DeviceNumber 
+InfoCommand      = "I"
+ClearCommand     = "X"
+CancelCommand    = "C"
+
+DeviceConfig     = DeviceNumber FieldSeparator DeviceType FieldSeparator [ Times ] ChksumSeparator Chksum
+DeviceNumber     = DigitWithoutZero
+DeviceType       = Valve | Flash | Camera
+
+Valve            = "V"
+Flash            = "F"
+Camera           = "C"
+
+Times            = Time { FieldSeparator Time }
+Time             = Offset TimeSeparator Duration
+
+Offset           = "0" | Number
+Duration         = "0" | Number
+Chksum           = "0" | Number
+
+Passes           =  "0" | Number
+Delay            =  "0" | Number
+
+FieldSeparator   = ";"
+TimeSeperator    = "|"
+ChksumSeparator  = "^"
+
+Number           = DigitWithoutZero { Digit } ;
+DigitWithoutZero = "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ;
+Digit            = "0" | DigitWithoutZero ;
+
+
+Example1:
+---------
+S;1;V;300|50;370|20^740
+"Set Tasks for Valve at ArduinoPin 1: Open at 300ms for 50ms and at 370ms for 20ms"
+
+
+Example2:
+---------
+R
+"Run once without delay"
+
+R;1
+"Start 1 round"
+
+R;10;5000
+"Start 10 rounds with 5 seconds delay"
+
+
+Example3:
+---------
+H;1
+"send HIGH to device #1"
+
+L;1
+"send LOW to device #1"
