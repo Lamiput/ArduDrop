@@ -1,15 +1,18 @@
-/*******************************************************************************
- * Project: Droplet - Toolkit for Liquid Art Photographers
+ /*******************************************************************************
+ * Project: ArduDrop - Toolkit for Liquid Art Photographers
+ * Copyright (C) 2021 Holger Pasligh
+ * 
+ * This program incorporates a modified version of "Droplet - Toolkit for Liquid Art Photographers"
  * Copyright (C) 2012 Stefan Brenner
  *
- * This file is part of Droplet.
+ * This file is part of ArduDrop.
  *
- * Droplet is free software: you can redistribute it and/or modify
+ * ArduDrop is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * Droplet is distributed in the hope that it will be useful,
+ * ArduDrop is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
@@ -25,9 +28,6 @@
 #include "droplet.h"
 #include "logging.h"
 #include "utils.h"
-
-#define TIMES_BUFFER_SIZE   40 // be careful with memory !!!
-#define MIN_DURATION        10 // actions with no duration are 10ms on HIGH
 
 
 // function definitions
@@ -73,9 +73,8 @@ void processCommand(char* cmd) {
     logging(DEBUG, "received low command");
     processHighLowCommand(LOW);
     
-  } else if(cmdToken[0] == CMD_CANCEL) {
-    
-    logging(DEBUG, "no execution currently running");
+  } else if(strcmp(cmdToken, CMD_CANCEL) == 0) {
+    logging(DEBUG, "recieved cancel command");
     
   } else {
     
@@ -88,26 +87,13 @@ void processCommand(char* cmd) {
 
 void processRunCommand() {  
 
-  char rounds = 1;
-  short int roundDelay = 0; // ms
+  short int rounds = 1;
+  int roundDelay = 0; // ms
   
-  // TODO use sscanf instead?
-  
-  // read number of rounds
-  char* argToken = strtok(NULL, FIELD_SEPARATOR);
-  if(argToken != NULL) {
-    rounds = atoi(argToken);
-            
-    // read round delay
-    argToken = strtok(NULL, FIELD_SEPARATOR);
-    if(argToken != NULL) {
-       roundDelay = atoi(argToken);
-    }
-    
-  }
-  
-  // TODO brenner: ignore further input or check?
-  
+  // get additional arguments if available
+  sscanf(strtok(NULL, "\n"), "%hd;%d", &rounds, &roundDelay);
+  logging(DEBUG, ("rounds: " + (String)rounds + ", delay: " + (String)roundDelay).c_str());
+   
   long startMillis = millis();
   
   // execute actions on droplet
@@ -125,41 +111,28 @@ void processRunCommand() {
     
     // check if execution should be cancled
     if(Serial.available()) {
-      char inChar = (char) Serial.peek();
-      if(inChar == CMD_CANCEL) {
-        
-        // remove serial input from stream
-        Serial.read(); // remove cancle command from stream
-        // TODO brenner: remove newline from stream
-        
+      char inChar[2];
+      inChar[1] = '\0'; // for stringconversion
+      inChar[0] = (char)Serial.peek();
+      if (strcmp(inChar, CMD_CANCEL) == 0) {
         logging(INFO, "execution cancled");
         return;
       }
     }
-   
   }
-  
   logging(INFO, "Finished execution");
-  
 }
 
 void processSetCommand() {
   
-  char deviceNumber;
+  short int deviceNumber;
   char deviceMnemonic;
   char times[TIMES_BUFFER_SIZE] = "";
-  short int chksum = 0, chksumInternal = 0;
+  int chksum = 0, chksumInternal = 0;
     
   // read device infos
   if(sscanf(strtok(NULL, "^"), "%hd;%c;%s", &deviceNumber, &deviceMnemonic, times) < 2) {
     logging(ERROR, "Wrong Format");
-    return;
-  }
-  
-  if(strcmp(&deviceMnemonic, DEVICE_BUTTON) == 0) {
-    droplet.startButton = deviceNumber;
-    Serial.print("Added Start Button on Pin ");
-    Serial.println(droplet.startButton);
     return;
   }
   
@@ -175,7 +148,7 @@ void processSetCommand() {
     short int offset = -1, duration = -1;
     char remain[] = "";
     
-    if(sscanf(token, "%d|%d", &offset, &duration, &remain) == 3) {
+    if(sscanf(token, "%hd|%hd%s", &offset, &duration, remain) == 3) {
       logging(ERROR, "Wrong Format");
       return;
     }
@@ -231,7 +204,7 @@ void processResetCommand() {
 
 void processHighLowCommand(int mode) {
   
-  char deviceNumber;
+  int deviceNumber;
   
   // read device infos
   if(sscanf(strtok(NULL, "\n"), "%d", &deviceNumber) < 1) {
@@ -248,3 +221,11 @@ void processHighLowCommand(int mode) {
   digitalWrite(deviceMapping[deviceNumber], mode);
 }
 
+void processDebugLevelCommand() {
+  int dbgLevel;
+  if(sscanf(strtok(NULL, "\n"), "%d", &dbgLevel) < 1) {
+    logging(ERROR, "Wrong Format");
+    return;
+  }
+  setLoggingLevel(dbgLevel);
+}

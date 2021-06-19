@@ -1,15 +1,18 @@
-/*******************************************************************************
- * Project: Droplet - Toolkit for Liquid Art Photographers
+ /*******************************************************************************
+ * Project: ArduDrop - Toolkit for Liquid Art Photographers
+ * Copyright (C) 2021 Holger Pasligh
+ * 
+ * This program incorporates a modified version of "Droplet - Toolkit for Liquid Art Photographers"
  * Copyright (C) 2012 Stefan Brenner
  *
- * This file is part of Droplet.
+ * This file is part of ArduDrop.
  *
- * Droplet is free software: you can redistribute it and/or modify
+ * ArduDrop is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * Droplet is distributed in the hope that it will be useful,
+ * ArduDrop is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
@@ -130,10 +133,6 @@ void printActions() {
       nextAction = nextAction->next;
     }
   }
-  if(droplet.startButton != UNDEFINED_PIN) {
-    Serial.print("Startbutton:");
-    Serial.println(droplet.startButton);
-  }
 }
 
 /* 
@@ -149,7 +148,6 @@ void clearActions() {
   }
   
   droplet.actions = NULL;
-  droplet.startButton = UNDEFINED_PIN;
 }
 
 
