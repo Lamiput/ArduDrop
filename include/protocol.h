@@ -1,15 +1,18 @@
-/*******************************************************************************
- * Project: Droplet - Toolkit for Liquid Art Photographers
+ /*******************************************************************************
+ * Project: ArduDrop - Toolkit for Liquid Art Photographers
+ * Copyright (C) 2021 Holger Pasligh
+ * 
+ * This program incorporates a modified version of "Droplet - Toolkit for Liquid Art Photographers"
  * Copyright (C) 2012 Stefan Brenner
  *
- * This file is part of Droplet.
+ * This file is part of ArduDrop.
  *
- * Droplet is free software: you can redistribute it and/or modify
+ * ArduDrop is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * Droplet is distributed in the hope that it will be useful,
+ * ArduDrop is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
@@ -21,6 +24,13 @@
 #ifndef __PROTOCOL_H__
 #define __PROTOCOL_H__
 
+//Basics
+#define TIMES_BUFFER_SIZE   40 // be careful with memory !!!
+#define MIN_DURATION        10 // actions with no duration are 10ms on HIGH
+#ifndef DEVICE_NUMBERS
+  #warning "Redef DEVICE_Numbers"
+  #define DEVICE_NUMBERS      50 // how many digital pins should be mapped?
+#endif
 
 // commands
 #define CMD_RUN     "R"
