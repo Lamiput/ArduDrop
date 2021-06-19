@@ -23,7 +23,6 @@
 
 #define BOUD_RATE         9600
 #define MAX_INPUT_SIZE      50 // how many memory can we use one the different arduino devices?
-#define DEVICE_NUMBERS      50 // how many digital pins should be mapped?
 
 #include <Arduino.h>
 #include "logging.h"

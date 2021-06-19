@@ -26,11 +26,8 @@
 
 //Basics
 #define TIMES_BUFFER_SIZE   40 // be careful with memory !!!
-#define MIN_DURATION        10 // actions with no duration are 10ms on HIGH
-#ifndef DEVICE_NUMBERS
-  #warning "Redef DEVICE_Numbers"
-  #define DEVICE_NUMBERS      50 // how many digital pins should be mapped?
-#endif
+#define DEVICE_NUMBERS      50 // how many digital pins should be mapped?
+#define MIN_DURATION        10 // if 0, duration of task will be set to this value
 
 // commands
 #define CMD_RUN     "R"
