@@ -37,4 +37,5 @@ void logging(const int level, const char* message) {
 
 void setLoggingLevel(const int level) {
   loggingLevel = level;
+  logging(INFO, ("Loglevel is set to " + (String)loggingLevel).c_str());
 }

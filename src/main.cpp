@@ -39,6 +39,7 @@ char deviceMapping[DEVICE_NUMBERS] = {  0,    1,   2,   3,   4,   5,   6,   7,  
                                        40,   41,  42,  43,  44,  45,  46,  47,  48,  49,
                                        };
 
+void waitForSerialConnection();
 
 /*
  * setup stuff befor we start our main loop
@@ -53,8 +54,10 @@ void setup() {
     // manually set pin to LOW otherwise it is 
     // by default set to HIGH on some boards (i.e. Uno)
     digitalWrite(deviceMapping[i], LOW);
-  } 
-    
+  }
+
+  // no reason to go further without serial connection
+  waitForSerialConnection();
 }
 
  
@@ -65,6 +68,13 @@ void loop() {
   delay(10);  
 }
 
+void waitForSerialConnection() {
+  while (!Serial)
+  {
+    delay(100); //wait for serial port
+  }
+  logging(INFO, "Init complete...");
+}
 
 
 char input[MAX_INPUT_SIZE];
@@ -73,7 +83,6 @@ bool inputValid = true;
 
 void serialEvent() {
   while (Serial.available()) {
-    
     // get the new byte
     char inChar = (char) Serial.read(); 
     
@@ -103,11 +112,10 @@ void serialEvent() {
         count++;
       } else {
         inputValid = false;
-        logging(INFO, "Command to long, dismissed");
+        logging(INFO, ("Command to long, dismissed - max: " + (String)MAX_INPUT_SIZE).c_str());
         count = 0;
       }      
     }
-     
   }
 }
 

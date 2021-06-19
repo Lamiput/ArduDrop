@@ -30,13 +30,14 @@
 #define MIN_DURATION        10 // if 0, duration of task will be set to this value
 
 // commands
-#define CMD_RUN     "R"
-#define CMD_SET     "S"
-#define CMD_INFO    "I"
-#define CMD_RESET   "X"
-#define CMD_CANCEL  'C'
-#define CMD_HIGH    "H"
-#define CMD_LOW     "L"
+#define CMD_RUN         "R"
+#define CMD_SET         "S"
+#define CMD_INFO        "I"
+#define CMD_RESET       "X"
+#define CMD_CANCEL      "C"
+#define CMD_HIGH        "H"
+#define CMD_LOW         "L"
+#define CMD_DEBUGLEVEL  "D"
 
 // separators
 #define FIELD_SEPARATOR   ";"
@@ -48,7 +49,6 @@
 #define DEVICE_VALVE    "V"
 #define DEVICE_FLASH    "F"
 #define DEVICE_CAMERA   "C"
-#define DEVICE_BUTTON   "B"
 
 
 /*
