@@ -24,7 +24,7 @@
 
 #include <Arduino.h>
 #include "ardudrop.h"
-#include "logging.h"
+#include "logger.h"
 #include "command.h"
 #include "droplet.h"
 

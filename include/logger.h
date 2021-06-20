@@ -21,21 +21,28 @@
  * along with Droplet. If not, see <http://www.gnu.org/licenses/>.
  *******************************************************************************/
 
-// include arduino types and constants
-#include <Arduino.h>
-
-#include "logging.h"
+#ifndef __LOGGING_H__
+#define __LOGGING_H__
 
 
-int loggingLevel = DEBUG;
+// logging message levels
+#define ERROR 0
+#define WARN 1
+#define INFO 2
+#define DEBUG 3
+#define MINLEVEL 0
+#define MAXLEVEL 3
 
-void logging(const int level, const char* message) {
-  if(level <= loggingLevel) {
-    Serial.println(message);
-  }
-}
+//logger class
+class Logger
+{
+private:
+    static short int logLevel;
+public:
+  static void Log(const short int level, const char* message);
+  static void SetLogLevel(const short int level);
+  static short int GetLogLevel() {return logLevel; }
+};
 
-void setLoggingLevel(const int level) {
-  loggingLevel = level;
-  logging(INFO, ("Loglevel is set to " + (String)loggingLevel).c_str());
-}
+
+#endif

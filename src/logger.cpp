@@ -21,30 +21,24 @@
  * along with Droplet. If not, see <http://www.gnu.org/licenses/>.
  *******************************************************************************/
 
-#ifndef __LOGGING_H__
-#define __LOGGING_H__
+// include arduino types and constants
+#include <Arduino.h>
+
+#include "logger.h"
 
 
-// logging message levels
-#define ERROR 0
-#define WARN 1
-#define INFO 2
-#define DEBUG 3
+// init static members
+short int Logger::logLevel = DEBUG;
 
 
-// actual logging level
-extern int loggingLevel;
+void Logger::Log(const short int level, const char* message) {
+  if(level <= logLevel) {
+    Serial.println(message);
+  }
+}
 
-/*
- * Print a logging message to serial
- */
-void logging(const int level, const char* message);
-
-/*
- * Set logging level
- */
-void setLoggingLevel(const int level);
-
-
-
-#endif
+void Logger::SetLogLevel(const short int level) {
+  logLevel = level > MAXLEVEL?MAXLEVEL:level;
+  logLevel = level < MINLEVEL?MINLEVEL:level;
+  Log(INFO, ("Loglevel is set to " + (String)logLevel).c_str());
+}

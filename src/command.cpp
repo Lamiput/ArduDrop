@@ -25,7 +25,7 @@
 
 #include "command.h"
 #include "droplet.h"
-#include "logging.h"
+#include "logger.h"
 #include "utils.h"
 
 // init static members
@@ -53,7 +53,7 @@ void Command::Loop() {
   }
   if (inputIdx >= MAX_INPUT_SIZE) { // exit and reset input if cmd is too long
     inputIdx = 0;
-    logging(INFO, ("Command to long, dismissed - max: " + (String)MAX_INPUT_SIZE).c_str());
+    Logger::Log(INFO, ("Command to long, dismissed - max: " + (String)MAX_INPUT_SIZE).c_str());
     return;
   }
   if (Serial.available()) {
@@ -61,7 +61,7 @@ void Command::Loop() {
     if (inputChar == '\n') {
       inputCmd[inputIdx] = '\0';
       inputIdx = 0;
-      logging(DEBUG, inputCmd);
+      Logger::Log(DEBUG, inputCmd);
       ParseCommand(inputCmd);
     } else {
       inputCmd[inputIdx] = inputChar;
@@ -77,34 +77,34 @@ void Command::ParseCommand(char* cmd) {
   switch (cmdToken[0])
   {
   case CMD_SET:
-    logging(DEBUG, "received set command");
+    Logger::Log(DEBUG, "received set command");
     processSetCommand();
     break;
   case CMD_RESET:
-    logging(DEBUG, "received reset command");
+    Logger::Log(DEBUG, "received reset command");
     break;
   case CMD_RUN:
-    logging(DEBUG, "received run command");
+    Logger::Log(DEBUG, "received run command");
     processRunCommand();
     break;
   case CMD_CANCEL:
-    logging(DEBUG, "recieved cancel command");
+    Logger::Log(DEBUG, "recieved cancel command");
     break;
   case CMD_INFO:
-    logging(DEBUG, "received info command");
+    Logger::Log(DEBUG, "received info command");
     processInfoCommand();
     break;
   case CMD_HIGH:
-    logging(DEBUG, "received high command");
+    Logger::Log(DEBUG, "received high command");
     break;
   case CMD_LOW:
-    logging(DEBUG, "received low command");
+    Logger::Log(DEBUG, "received low command");
     break;
   case CMD_DEBUGLEVEL:
-    logging(DEBUG, "recieved set debuglevel command");
+    Logger::Log(DEBUG, "recieved set debuglevel command");
     break;
   default:
-    logging(WARN, "Command not found");;
+    Logger::Log(WARN, "Command not found");;
   }
 }
 
@@ -120,12 +120,12 @@ void Command::processSetCommand() {
     
   // read device info and tasklist
   if(sscanf(strtok(NULL, CHKSUM_SEPARATOR), "%hd;%c;%s", &deviceNumber, &deviceMnemonic, times) < 2) {
-    logging(ERROR, "Wrong Format");
+    Logger::Log(ERROR, "Wrong Format");
     return;
   }
   // read chksum
   if(sscanf(strtok(NULL, CMD_SEPARATOR), "%d", &chksum) < 1) {
-    logging(ERROR, "Wrong Format");
+    Logger::Log(ERROR, "Wrong Format");
     return;
   }
   // parse times
@@ -135,7 +135,7 @@ void Command::processSetCommand() {
     char remain[] = "";
     
     if(sscanf(token, "%hd|%hd%s", &offset, &duration, remain) == 3) {
-      logging(ERROR, "Wrong Format");
+      Logger::Log(ERROR, "Wrong Format");
       return;
     }
     
@@ -151,7 +151,7 @@ void Command::processSetCommand() {
     }
     
     if(deviceNumber < 0 || deviceNumber > DEVICE_NUMBERS - 1) {
-      logging(ERROR, "Wrong device number");
+      Logger::Log(ERROR, "Wrong device number");
       return;
     }
     
@@ -164,11 +164,11 @@ void Command::processSetCommand() {
   
   // verify checksum
   if(chksum != chksumInternal) {
-    logging(ERROR, "Wrong checksum");
+    Logger::Log(ERROR, "Wrong checksum");
     return;
   }
   
-  logging(DEBUG, "Transmission completed and checksum verified!");
+  Logger::Log(DEBUG, "Transmission completed and checksum verified!");
   
 }
 
@@ -192,7 +192,7 @@ void Command::processRunCommand() {
   
   // get additional arguments if available
   sscanf(strtok(NULL, "\n"), "%d;%d", &rounds, &roundDelay);
-  logging(DEBUG, ("rounds: " + (String)rounds + ", delay: " + (String)roundDelay).c_str());
+  Logger::Log(DEBUG, ("rounds: " + (String)rounds + ", delay: " + (String)roundDelay).c_str());
 }
 
 
@@ -204,7 +204,7 @@ void Command::processCancelCommand() {
 
 // show infos
 void Command::processInfoCommand() {  
-  logging(DEBUG, "Current device setup:");
+  Logger::Log(DEBUG, "Current device setup:");
 
   Serial.print("Free memory: ");
   Serial.println(freeMemory());
@@ -222,13 +222,13 @@ void Command::processHighLowCommand(int mode) {
   
   // read device infos
   if(sscanf(strtok(NULL, "\n"), "%d", &deviceNumber) < 1) {
-    logging(ERROR, "Wrong Format");
+    Logger::Log(ERROR, "Wrong Format");
     return;
   }
   
   // check device number bounds
   if(deviceNumber < 1 || deviceNumber > DEVICE_NUMBERS) {
-    logging(WARN, "wrong device number");
+    Logger::Log(WARN, "wrong device number");
     return;
   }
   
@@ -239,10 +239,10 @@ void Command::processHighLowCommand(int mode) {
 // set Level of debug-information
 // 0->3 (Info->Debug)
 void Command::processDebugLvlCommand() {
-  int dbgLevel;
-  if(sscanf(strtok(NULL, "\n"), "%d", &dbgLevel) < 1) {
-    logging(ERROR, "Wrong Format");
+  short int dbgLevel;
+  if(sscanf(strtok(NULL, "\n"), "%hd", &dbgLevel) < 1) {
+    Logger::Log(ERROR, "Wrong Format");
     return;
   }
-  setLoggingLevel(dbgLevel);
+  Logger::SetLogLevel(dbgLevel);
 }
