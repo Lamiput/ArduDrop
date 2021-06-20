@@ -24,26 +24,26 @@
 #ifndef __PROTOCOL_H__
 #define __PROTOCOL_H__
 
-//Basics
-#define TIMES_BUFFER_SIZE   40 // be careful with memory !!!
-#define DEVICE_NUMBERS      50 // how many digital pins should be mapped?
-#define MIN_DURATION        10 // if 0, duration of task will be set to this value
+#include "ardudrop.h"
+
+// signals
+#define HANDSHAKE       "A"
 
 // commands
-#define CMD_RUN         "R"
-#define CMD_SET         "S"
-#define CMD_INFO        "I"
-#define CMD_RESET       "X"
-#define CMD_CANCEL      "C"
-#define CMD_HIGH        "H"
-#define CMD_LOW         "L"
-#define CMD_DEBUGLEVEL  "D"
+#define CMD_SET         'S'
+#define CMD_RESET       'X'
+#define CMD_RUN         'R'
+#define CMD_CANCEL      'C'
+#define CMD_INFO        'I'
+#define CMD_HIGH        'H'
+#define CMD_LOW         'L'
+#define CMD_DEBUGLEVEL  'D'
 
 // separators
 #define FIELD_SEPARATOR   ";"
 #define TIME_SEPARATOR    "|"
 #define CHKSUM_SEPARATOR  "^"
-#define DEVICE_SEPARATOR  "\n"
+#define CMD_SEPARATOR     "\n"
 
 // devices
 #define DEVICE_VALVE    "V"
@@ -51,10 +51,26 @@
 #define DEVICE_CAMERA   "C"
 
 
-/*
- * Process and execute a command string
- */
-void processCommand(char* cmd);
+class Command
+{
+private:
+  static bool initDone;
+  static char inputChar;
+  static char inputCmd[MAX_INPUT_SIZE];
+  static short int inputIdx;
+  static void ParseCommand(char* cmd);
+  static void processSetCommand();
+  static void processResetCommand();
+  static void processRunCommand();
+  static void processCancelCommand();
+  static void processInfoCommand();
+  static void processHighLowCommand(int mode);
+  static void processDebugLvlCommand();
+
+public:
+  static void Setup();
+  static void Loop();
+};
 
 
 #endif

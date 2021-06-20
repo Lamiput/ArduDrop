@@ -21,103 +21,49 @@
  * along with Droplet. If not, see <http://www.gnu.org/licenses/>.
  *******************************************************************************/
 
-#define BOUD_RATE         9600
-#define MAX_INPUT_SIZE      50 // how many memory can we use one the different arduino devices?
 
 #include <Arduino.h>
+#include "ardudrop.h"
 #include "logging.h"
-#include "protocol.h"
+#include "command.h"
 #include "droplet.h"
 
+//devicemapping for the Uno
+char deviceMapping[DEVICE_NUMBERS] = {  0,   1,   2,   3,   4,   5,   6,
+                                        7,   8,   9,  10,   11,  12,  13,
+                                    };
 
-
-//devicemapping -> here it is 1:1, be aware that some of the Pins can be used for special tasks
-char deviceMapping[DEVICE_NUMBERS] = {  0,    1,   2,   3,   4,   5,   6,   7,   8,   9,
-                                       10,   11,  12,  13,  14,  15,  16,  17,  18,  19,
-                                       20,   21,  22,  23,  24,  25,  26,  27,  28,  29,
-                                       30,   31,  32,  33,  34,  35,  36,  37,  38,  39,
-                                       40,   41,  42,  43,  44,  45,  46,  47,  48,  49,
-                                       };
-
-void waitForSerialConnection();
+//devicemapping for the Mega2560 -> no need if you do not want to use so many pins
+/*
+char deviceMapping[DEVICE_NUMBERS] = {  0,   1,   2,   3,   4,   5,   6,   7,   8,   9,
+                                       10,  11,  12,  13,  14,  15,  16,  17,  18,  19,
+                                       20,  21,  22,  23,  24,  25,  26,  27,  28,  29,
+                                       30,  31,  32,  33,  34,  35,  36,  37,  38,  39,
+                                       40,  41,  42,  43,  44,  45,  46,  47,  48,  49,
+                                    };
+*/
 
 /*
- * setup stuff befor we start our main loop
+ * setup - run once
  */
 void setup() {
-  // start serial communication
-  Serial.begin(BOUD_RATE);
- 
   // setup pin modes
-  for(int i = 0; i < DEVICE_NUMBERS; i++) {
-    pinMode(deviceMapping[i], OUTPUT);
+//  for(int i = 0; i < DEVICE_NUMBERS; i++) {
+//    pinMode(deviceMapping[i], OUTPUT);
     // manually set pin to LOW otherwise it is 
     // by default set to HIGH on some boards (i.e. Uno)
-    digitalWrite(deviceMapping[i], LOW);
-  }
+//    digitalWrite(deviceMapping[i], LOW);
+//  }
 
-  // no reason to go further without serial connection
-  waitForSerialConnection();
+  // init serial communication
+  Command::Setup();
 }
 
  
 /*
- * entry point
+ * main loop - do not use long running functions here
  */
 void loop() {
-  delay(10);  
+  Command::Loop();  
 }
-
-void waitForSerialConnection() {
-  while (!Serial)
-  {
-    delay(100); //wait for serial port
-  }
-  logging(INFO, "Init complete...");
-}
-
-
-char input[MAX_INPUT_SIZE];
-int count = 0;
-bool inputValid = true;
-
-void serialEvent() {
-  while (Serial.available()) {
-    // get the new byte
-    char inChar = (char) Serial.read(); 
-    
-    //Serial.println("New char: " + String(inChar));
-    
-    // TODO brenner: consume input byte by byte
-    
-    if (inChar == '\n') {
-      
-      input[count] = '\0';
-
-      if (inputValid){
-        logging(DEBUG, input);
-        processCommand(input);
-      }
-      count = 0;
-      inputValid = true;
-      
-            
-      // TODO send received message next can come
-      
-    } else {
-      
-      // add it to the input string, if buffer is not full
-      if (count < MAX_INPUT_SIZE - 1) {
-        input[count] = inChar;
-        count++;
-      } else {
-        inputValid = false;
-        logging(INFO, ("Command to long, dismissed - max: " + (String)MAX_INPUT_SIZE).c_str());
-        count = 0;
-      }      
-    }
-  }
-}
-
-
 
