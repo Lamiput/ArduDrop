@@ -21,15 +21,21 @@
  * along with ArduDrop. If not, see <http://www.gnu.org/licenses/>.
  *******************************************************************************/
 
-#ifndef __ARDUDROP_H__
-#define __ARDUDROP_H__
 
-#define BAUD_RATE         9600
-#define MAX_INPUT_SIZE      50 // max length of serial command
-#define TIMES_BUFFER_SIZE   40 // max number of tasks within a single command
-#define DEVICE_NUMBERS      14 // how many digital pins should be mapped? 
-#define MIN_DURATION        10 // default length of tasks in ms
+#include <Arduino.h>
 
-extern char deviceMapping[DEVICE_NUMBERS];
 
-#endif
+// return free RAM memory
+unsigned short freeMemory() {
+  unsigned short counter = 0;
+  byte *bytes;
+
+  // grab as much bytes as possible
+  while ( (bytes = (byte*) malloc (counter * sizeof(byte))) != NULL ) {
+    counter++;
+    free(bytes);
+  }
+  
+  free(bytes);
+  return counter;
+}

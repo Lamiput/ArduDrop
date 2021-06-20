@@ -18,7 +18,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Droplet. If not, see <http://www.gnu.org/licenses/>.
+ * along with ArduDrop. If not, see <http://www.gnu.org/licenses/>.
  *******************************************************************************/
 
 // include arduino types and constants
@@ -28,16 +28,16 @@
 
 
 // init static members
-short int Logger::logLevel = DEBUG;
+unsigned char Logger::logLevel = DEBUG;
 
 
-void Logger::Log(const short int level, const char* message) {
+void Logger::Log(const unsigned char level, const char* message) {
   if(level <= logLevel) {
     Serial.println(message);
   }
 }
 
-void Logger::SetLogLevel(const short int level) {
+void Logger::SetLogLevel(const unsigned char level) {
   logLevel = level > MAXLEVEL?MAXLEVEL:level;
   logLevel = level < MINLEVEL?MINLEVEL:level;
   Log(INFO, ("Loglevel is set to " + (String)logLevel).c_str());

@@ -18,7 +18,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Droplet. If not, see <http://www.gnu.org/licenses/>.
+ * along with ArduDrop. If not, see <http://www.gnu.org/licenses/>.
  *******************************************************************************/
 
 #ifndef __LOGGING_H__
@@ -37,11 +37,11 @@
 class Logger
 {
 private:
-    static short int logLevel;
+    static unsigned char logLevel;
 public:
-  static void Log(const short int level, const char* message);
-  static void SetLogLevel(const short int level);
-  static short int GetLogLevel() {return logLevel; }
+  static void Log(const unsigned char level, const char* message);
+  static void SetLogLevel(const unsigned char level);
+  static unsigned char GetLogLevel() {return logLevel; }
 };
 
 

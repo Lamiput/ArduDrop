@@ -18,36 +18,38 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Droplet. If not, see <http://www.gnu.org/licenses/>.
+ * along with ArduDrop. If not, see <http://www.gnu.org/licenses/>.
  *******************************************************************************/
 
 #ifndef __DROPLET_H__
 #define __DROPLET_H__
 
-
-// TODO use bit masks for better performance
 struct Action {
-  unsigned short offset;    // ms                        // 2 bytes
-  unsigned char mode;       // pin mode (HIGH/LOW)       // 1 byte
-  unsigned char pin;        // pin # of device           // 1 byte
-  Action *next;             // pointer to next action    // 4 bytes
-};                                                       // 8 bytes
-
-struct Droplet {
-  Action *actions;  // pointer to first action           // 4 bytes
-  short startButton; // start button pin
+  unsigned long Offset;
+  unsigned char Mode;
+  unsigned char Pin;
+  Action *Next;
 };
 
 
-extern Droplet droplet;
-extern char deviceMapping[];
+class Controller
+{
+private:
+  static bool initDone;
+  static bool taskRunning;
+  static Action *firstAction;
+  static void AddAction(Action *newAction);
 
-
-void addActions(int deviceNumber, int offset, int duration);
-void addAction(Action *action);
-void executeActions();
-void clearActions();
-void printActions();
+public:
+  static void Setup();
+  static void Loop();
+  static void AddTask(const unsigned char targetPin, const unsigned long offset, const unsigned long duration);
+  static void DeleteTasks();
+  static void TaskInfo();
+  static void ReqRun(const unsigned char rounds, const unsigned long pause);
+  static void ReqCancel();
+  static void ReqSwitch();
+};
 
 
 #endif

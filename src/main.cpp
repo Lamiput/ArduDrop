@@ -18,15 +18,14 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Droplet. If not, see <http://www.gnu.org/licenses/>.
+ * along with ArduDrop. If not, see <http://www.gnu.org/licenses/>.
  *******************************************************************************/
 
 
 #include <Arduino.h>
 #include "ardudrop.h"
-#include "logger.h"
 #include "command.h"
-#include "droplet.h"
+#include "controller.h"
 
 //devicemapping for the Uno
 char deviceMapping[DEVICE_NUMBERS] = {  0,   1,   2,   3,   4,   5,   6,
@@ -47,16 +46,10 @@ char deviceMapping[DEVICE_NUMBERS] = {  0,   1,   2,   3,   4,   5,   6,   7,   
  * setup - run once
  */
 void setup() {
-  // setup pin modes
-//  for(int i = 0; i < DEVICE_NUMBERS; i++) {
-//    pinMode(deviceMapping[i], OUTPUT);
-    // manually set pin to LOW otherwise it is 
-    // by default set to HIGH on some boards (i.e. Uno)
-//    digitalWrite(deviceMapping[i], LOW);
-//  }
-
   // init serial communication
   Command::Setup();
+  // init controller
+  Controller::Setup();
 }
 
  

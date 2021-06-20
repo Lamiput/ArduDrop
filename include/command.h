@@ -18,7 +18,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Droplet. If not, see <http://www.gnu.org/licenses/>.
+ * along with ArduDrop. If not, see <http://www.gnu.org/licenses/>.
  *******************************************************************************/
 
 #ifndef __PROTOCOL_H__
@@ -57,14 +57,14 @@ private:
   static bool initDone;
   static char inputChar;
   static char inputCmd[MAX_INPUT_SIZE];
-  static short int inputIdx;
+  static unsigned char inputIdx;
   static void ParseCommand(char* cmd);
   static void processSetCommand();
   static void processResetCommand();
   static void processRunCommand();
   static void processCancelCommand();
   static void processInfoCommand();
-  static void processHighLowCommand(int mode);
+  static void processHighLowCommand(const unsigned char mode);
   static void processDebugLvlCommand();
 
 public:

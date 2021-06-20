@@ -18,13 +18,13 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Droplet. If not, see <http://www.gnu.org/licenses/>.
+ * along with ArduDrop. If not, see <http://www.gnu.org/licenses/>.
  *******************************************************************************/
 
 #include <Arduino.h>
 
 #include "command.h"
-#include "droplet.h"
+#include "controller.h"
 #include "logger.h"
 #include "utils.h"
 
@@ -32,11 +32,14 @@
 bool Command::initDone = false;
 char Command::inputChar;
 char Command::inputCmd[MAX_INPUT_SIZE];
-short int Command::inputIdx = 0;
+unsigned char Command::inputIdx = 0;
 
 
 // setup serial communication - call once at startup
 void Command::Setup() {
+  if (initDone) {
+    return;
+  }
   Serial.begin(BAUD_RATE);
   //wait until Serial Port is opened
   while (!Serial) {
@@ -82,6 +85,7 @@ void Command::ParseCommand(char* cmd) {
     break;
   case CMD_RESET:
     Logger::Log(DEBUG, "received reset command");
+    processResetCommand();
     break;
   case CMD_RUN:
     Logger::Log(DEBUG, "received run command");
@@ -89,6 +93,7 @@ void Command::ParseCommand(char* cmd) {
     break;
   case CMD_CANCEL:
     Logger::Log(DEBUG, "recieved cancel command");
+    processCancelCommand();
     break;
   case CMD_INFO:
     Logger::Log(DEBUG, "received info command");
@@ -96,12 +101,15 @@ void Command::ParseCommand(char* cmd) {
     break;
   case CMD_HIGH:
     Logger::Log(DEBUG, "received high command");
+    processHighLowCommand(HIGH);
     break;
   case CMD_LOW:
     Logger::Log(DEBUG, "received low command");
+    processHighLowCommand(LOW);
     break;
   case CMD_DEBUGLEVEL:
     Logger::Log(DEBUG, "recieved set debuglevel command");
+    processDebugLvlCommand();
     break;
   default:
     Logger::Log(WARN, "Command not found");;
@@ -112,33 +120,38 @@ void Command::ParseCommand(char* cmd) {
 // parse set command
 // DeviceNumber;DeviceType;StartTime|Duration[;StartTime|Duration]*^Checksum
 void Command::processSetCommand() {
-  
-  short int deviceNumber;
+  unsigned char deviceNumber;
   char deviceMnemonic;
   char times[TIMES_BUFFER_SIZE] = "";
-  int chksum = 0, chksumInternal = 0;
-    
+  unsigned long chksum = 0, chksumInternal = 0;
+  unsigned long offset, duration;   
   // read device info and tasklist
-  if(sscanf(strtok(NULL, CHKSUM_SEPARATOR), "%hd;%c;%s", &deviceNumber, &deviceMnemonic, times) < 2) {
+  if(sscanf(strtok(NULL, CHKSUM_SEPARATOR), "%hhu;%c;%s", &deviceNumber, &deviceMnemonic, times) < 2) {
     Logger::Log(ERROR, "Wrong Format");
     return;
   }
   // read chksum
-  if(sscanf(strtok(NULL, CMD_SEPARATOR), "%d", &chksum) < 1) {
+  if(sscanf(strtok(NULL, CMD_SEPARATOR), "%lu", &chksum) < 1) {
     Logger::Log(ERROR, "Wrong Format");
+    return;
+  }
+  // is the target device available
+  if(deviceNumber < 0 || deviceNumber > DEVICE_NUMBERS - 1) {
+    Logger::Log(ERROR, "Wrong device number");
     return;
   }
   // parse times
   char *token = strtok(times, FIELD_SEPARATOR);
   while(token != NULL) {
-    short int offset = -1, duration = -1;
+    offset = 0,
+    duration = 0;
     char remain[] = "";
-    
-    if(sscanf(token, "%hd|%hd%s", &offset, &duration, remain) == 3) {
+    // read pair of times
+    if(sscanf(token, "%lu|%lu%s", &offset, &duration, remain) == 3) {
       Logger::Log(ERROR, "Wrong Format");
       return;
     }
-    
+    // limit offset and duration to sane values and update checksum
     if(offset >= 0) {
       chksumInternal += offset;
     } else {
@@ -149,37 +162,26 @@ void Command::processSetCommand() {
     } else {
       duration = MIN_DURATION;
     }
-    
-    if(deviceNumber < 0 || deviceNumber > DEVICE_NUMBERS - 1) {
-      Logger::Log(ERROR, "Wrong device number");
-      return;
-    }
-    
     // add new actions to droplet
-    // addActions(deviceMapping[deviceNumber], offset, duration);
-    
+    Controller::AddTask(deviceMapping[deviceNumber], offset, duration);
     // read next time
     token = strtok(NULL, FIELD_SEPARATOR);
   }
-  
   // verify checksum
   if(chksum != chksumInternal) {
     Logger::Log(ERROR, "Wrong checksum");
     return;
   }
-  
   Logger::Log(DEBUG, "Transmission completed and checksum verified!");
-  
 }
 
 
 // call reset of all tasks and memory cleaning
 void Command::processResetCommand() {
-  Serial.print("Free memory: ");
-  Serial.println(freeMemory());
-  clearActions();
-  Serial.print("Free memory: ");
-  Serial.println(freeMemory());
+  Logger::Log(INFO, ("Free memory: " + (String)freeMemory()).c_str());;
+  Logger::Log(MINLEVEL, "Deleting Tasks....");
+  Controller::DeleteTasks();
+  Logger::Log(INFO, ("Free memory: " + (String)freeMemory()).c_str());
 }
 
 
@@ -187,11 +189,11 @@ void Command::processResetCommand() {
 // [;NumberOfRounds[;PauseTime]]
 void Command::processRunCommand() {  
 
-  int rounds = 1;
-  int roundDelay = 0; // ms
+  unsigned char rounds = 1;
+  unsigned long roundDelay = 0; // ms
   
   // get additional arguments if available
-  sscanf(strtok(NULL, "\n"), "%d;%d", &rounds, &roundDelay);
+  sscanf(strtok(NULL, "\n"), "%hhu;%lu", &rounds, &roundDelay);
   Logger::Log(DEBUG, ("rounds: " + (String)rounds + ", delay: " + (String)roundDelay).c_str());
 }
 
@@ -204,24 +206,20 @@ void Command::processCancelCommand() {
 
 // show infos
 void Command::processInfoCommand() {  
-  Logger::Log(DEBUG, "Current device setup:");
-
-  Serial.print("Free memory: ");
-  Serial.println(freeMemory());
-  
-  // printActions();
-  
+  Logger::Log(MINLEVEL, "Current device setup:");
+  Logger::Log(MINLEVEL, ("Free memory: " + (String)freeMemory()).c_str()); 
+  Controller::TaskInfo();
 }
 
 
 // parse static on/off command
 // DeviceNumber -> On/Off is already specified
-void Command::processHighLowCommand(int mode) {
+void Command::processHighLowCommand(unsigned char mode) {
   
-  int deviceNumber;
+  unsigned char deviceNumber;
   
   // read device infos
-  if(sscanf(strtok(NULL, "\n"), "%d", &deviceNumber) < 1) {
+  if(sscanf(strtok(NULL, "\n"), "%hhu", &deviceNumber) < 1) {
     Logger::Log(ERROR, "Wrong Format");
     return;
   }
@@ -239,8 +237,8 @@ void Command::processHighLowCommand(int mode) {
 // set Level of debug-information
 // 0->3 (Info->Debug)
 void Command::processDebugLvlCommand() {
-  short int dbgLevel;
-  if(sscanf(strtok(NULL, "\n"), "%hd", &dbgLevel) < 1) {
+  unsigned char dbgLevel;
+  if(sscanf(strtok(NULL, "\n"), "%hhu", &dbgLevel) < 1) {
     Logger::Log(ERROR, "Wrong Format");
     return;
   }
