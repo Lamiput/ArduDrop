@@ -27,12 +27,21 @@
 #include "controller.h"
 #include "ardudrop.h"
 #include "utils.h"
-#include "logger.h"
+#include "serialcom.h"
+
 
 // init static members
 bool Controller::initDone = false;
 bool Controller::taskRunning = false;
+bool Controller::taskStart = false;
+bool Controller::taskCancel = false;
+unsigned char Controller::loopState = 0;
+unsigned char Controller::roundsToGo = 0;
+unsigned long Controller::timeStart = 0;
+unsigned long Controller::roundDelay = 0;
 Action* Controller::firstAction = NULL;
+Action* Controller::currentAction = NULL;
+
 
 /*
  * Setup Controller - run only once
@@ -52,6 +61,95 @@ void Controller::Setup() {
 
 
 /*
+ * Controller Loop
+ * Statemachine - run only after init
+ */
+void Controller::Loop(){
+  if (!initDone) {
+    return;
+  }
+  switch (loopState)
+  {
+  case CTRL_STANDBY:
+    if (taskStart && (firstAction != NULL)) {
+      SerialCom::Log(INFO, "Task started...");
+      loopState = CTRL_TASKBEGIN;
+      taskRunning = true;
+      taskStart = false;
+    }
+    break;
+  case CTRL_TASKBEGIN:
+    if (taskCancel) {
+      loopState = CTRL_CANCEL;
+      return;
+    }
+    if (roundsToGo <= 0) {
+      loopState = CTRL_STANDBY;
+      return;
+    }
+    SerialCom::Log(INFO, ("rounds to go: " + (String)roundsToGo).c_str());
+    roundsToGo--;
+    timeStart = micros();
+    currentAction = firstAction;
+    loopState = CTRL_TASK;
+    break;
+  case CTRL_TASK:
+    if (taskCancel) {
+      loopState = CTRL_CANCEL;
+      return;
+    }
+    if (currentAction->Offset <= GetDeltaT(timeStart)) {
+      digitalWrite(currentAction->Pin, currentAction->Mode);
+      if (currentAction->Next != NULL) {
+        currentAction = currentAction->Next;
+      } else {
+        loopState = CTRL_PAUSEBEGIN;
+      }
+    }
+    break;
+  case CTRL_PAUSEBEGIN:
+    if (taskCancel) {
+      loopState = CTRL_CANCEL;
+      return;
+    }
+    if (roundsToGo <= 0) {
+      taskRunning = false;
+      roundsToGo = 0;
+      roundDelay = 0;
+      loopState = CTRL_STANDBY;
+      SerialCom::Log(INFO, "Task finished");
+      return;
+    }
+    timeStart = micros();
+    loopState = CTRL_PAUSE;
+    break;
+  case CTRL_PAUSE:
+    if (taskCancel) {
+      loopState = CTRL_CANCEL;
+      return;
+    }
+    if (roundDelay <= GetDeltaT(timeStart)) { loopState = CTRL_TASKBEGIN; }
+    break;  
+  case CTRL_CANCEL:
+    // set all pins to LOW and enter standby
+    for(int i = 0; i < DEVICE_NUMBERS; i++) {
+      digitalWrite(deviceMapping[i], LOW);
+    }
+    taskCancel = false;
+    taskRunning = false;
+    roundsToGo = 0;
+    roundDelay = 0;
+    loopState = CTRL_STANDBY;
+    SerialCom::Log(INFO, "Task canceled");
+    break;  
+  default:
+    loopState = CTRL_STANDBY;
+    break;
+  }
+}
+
+
+/*
  * Add two actions to memory.
  *    HIGH action at offset
  *    LOW action at offset + duration.
@@ -59,12 +157,12 @@ void Controller::Setup() {
 void Controller::AddTask(const unsigned char targetPin, const unsigned long offset, const unsigned long duration) {
   // abort if tasks are currently running
   if (taskRunning) {
-    Logger::Log(INFO, "denied - tasks are currently running");
+    SerialCom::Log(INFO, "denied - tasks are currently running");
     return;
   }
   // check if enough momory is available
   if (freeMemory() < 2 * sizeof(struct Action)) {
-    Logger::Log(ERROR, "not enough memory available");
+    SerialCom::Log(ERROR, "not enough memory available");
     return;
   }
   // opening action
@@ -91,7 +189,7 @@ void Controller::AddTask(const unsigned char targetPin, const unsigned long offs
 void Controller::AddAction(Action *newAction) {
   // abort if tasks are currently running
   if (taskRunning) {
-    Logger::Log(ERROR, "denied - tasks are currently running");
+    SerialCom::Log(ERROR, "denied - tasks are currently running");
     return;
   }
   Action *action = firstAction;
@@ -122,7 +220,7 @@ void Controller::AddAction(Action *newAction) {
 void Controller::DeleteTasks() {
   // abort if tasks are currently running
   if (taskRunning) {
-    Logger::Log(ERROR, "denied - tasks are currently running");
+    SerialCom::Log(ERROR, "denied - tasks are currently running");
     return;
   }
   Action *action = firstAction;  
@@ -136,24 +234,81 @@ void Controller::DeleteTasks() {
 
 
 /*
- * use logger to display list of tasks
+ * display list of tasks
  */
 void Controller::TaskInfo() {
   // abort if tasks are currently running
   if (taskRunning) {
-    Logger::Log(ERROR, "denied - tasks are currently running");
+    SerialCom::Log(ERROR, "denied - tasks are currently running");
     return;
   }
   Action *action = firstAction;
   if(action == NULL) {
-    Logger::Log(MINLEVEL, "No actions defined!");
+    SerialCom::Log(MINLEVEL, "No actions defined!");
   } else {
     while(action != NULL) {
-      Logger::Log(MINLEVEL, ((String)action->Pin + ":" + (String)action->Offset + ":" + (String)action->Mode).c_str());
+      SerialCom::Log(MINLEVEL, ((String)action->Pin + ":" + (String)action->Offset + ":" + (String)action->Mode).c_str());
       action = action->Next;
     }
   }
 }
 
 
+/*
+ * Request start of new round of tasks
+ */
+void Controller::ReqRun(const unsigned char rounds, const unsigned long delay) {
+  if (taskRunning) {
+    SerialCom::Log(WARN, "task already running...");
+    return;
+  }
+  if (firstAction == NULL) {
+    SerialCom::Log(WARN, "no task defined...");
+    return;
+  }
+  roundsToGo = rounds;
+  roundDelay = delay;
+  taskStart = true;
+}
+
+
+/*
+ * Request cancellation tasks
+ */
+void Controller::ReqCancel() {
+  if (taskRunning) {
+    taskCancel = true;
+    SerialCom::Log(INFO, "aborting Task requested");
+  } else {
+    SerialCom::Log(INFO, "No tasks to cancel");
+  }
+}
+
+
+/*
+ * Request static switch of pins
+ * only allowed if no task running
+ */
+void Controller::ReqSwitch(const unsigned char targetPin, const unsigned char mode) {
+  if (taskRunning) {
+    SerialCom::Log(ERROR, "denied - task running");
+    return;
+  }
+  digitalWrite(targetPin, mode);
+}
+
+
+/*
+ * Get time since starttime in micros
+ * max span are ~70 minutes
+ * consider one overflow - unsigned long
+ */
+unsigned long Controller::GetDeltaT(const unsigned long tStart) {
+  unsigned long tAct = micros();
+  if (tAct >= tStart) {
+    return (tAct - tStart);
+  } else {
+    return (tAct + MAXMICROS - tStart);
+  }
+}
 

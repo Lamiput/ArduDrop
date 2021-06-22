@@ -24,6 +24,15 @@
 #ifndef __DROPLET_H__
 #define __DROPLET_H__
 
+#define CTRL_STANDBY 0
+#define CTRL_TASKBEGIN 10
+#define CTRL_TASK 11
+#define CTRL_PAUSEBEGIN 20
+#define CTRL_PAUSE 21
+#define CTRL_CANCEL 99
+
+#define MAXMICROS 4294967295
+
 struct Action {
   unsigned long Offset;
   unsigned char Mode;
@@ -37,8 +46,16 @@ class Controller
 private:
   static bool initDone;
   static bool taskRunning;
+  static bool taskStart;
+  static bool taskCancel;
+  static unsigned char loopState;
+  static unsigned char roundsToGo;
+  static unsigned long roundDelay;
+  static unsigned long timeStart;
   static Action *firstAction;
+  static Action *currentAction;
   static void AddAction(Action *newAction);
+  static unsigned long GetDeltaT(const unsigned long tStart);
 
 public:
   static void Setup();
@@ -46,9 +63,9 @@ public:
   static void AddTask(const unsigned char targetPin, const unsigned long offset, const unsigned long duration);
   static void DeleteTasks();
   static void TaskInfo();
-  static void ReqRun(const unsigned char rounds, const unsigned long pause);
+  static void ReqRun(const unsigned char rounds, const unsigned long delay);
   static void ReqCancel();
-  static void ReqSwitch();
+  static void ReqSwitch(const unsigned char targetPin, const unsigned char mode);
 };
 
 

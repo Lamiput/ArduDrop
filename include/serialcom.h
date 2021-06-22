@@ -21,24 +21,35 @@
  * along with ArduDrop. If not, see <http://www.gnu.org/licenses/>.
  *******************************************************************************/
 
-// include arduino types and constants
-#include <Arduino.h>
+#ifndef __LOGGING_H__
+#define __LOGGING_H__
 
-#include "logger.h"
+#include "ardudrop.h"
+
+// logging message levels
+#define ERROR 0
+#define WARN 1
+#define INFO 2
+#define DEBUG 3
+#define MINLEVEL 0
+#define MAXLEVEL 3
 
 
-// init static members
-unsigned char Logger::logLevel = DEBUG;
+class SerialCom
+{
+private:
+  static bool initDone;
+  static char inputChar;
+  static char inputCmd[MAX_INPUT_SIZE];
+  static unsigned char inputIdx;
+  static unsigned char logLevel;
+public:
+  static void Setup();
+  static void Loop();
+  static void Log(const unsigned char level, const char* message);
+  static void SetLogLevel(const unsigned char level);
+  static unsigned char GetLogLevel() {return logLevel; }
+};
 
 
-void Logger::Log(const unsigned char level, const char* message) {
-  if(level <= logLevel) {
-    Serial.println(message);
-  }
-}
-
-void Logger::SetLogLevel(const unsigned char level) {
-  logLevel = level > MAXLEVEL?MAXLEVEL:level;
-  logLevel = level < MINLEVEL?MINLEVEL:level;
-  Log(INFO, ("Loglevel is set to " + (String)logLevel).c_str());
-}
+#endif

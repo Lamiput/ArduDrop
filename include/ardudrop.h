@@ -30,6 +30,6 @@
 #define DEVICE_NUMBERS      14 // how many digital pins should be mapped? 
 #define MIN_DURATION        10 // default length of tasks in ms
 
-extern char deviceMapping[DEVICE_NUMBERS];
+extern const char deviceMapping[DEVICE_NUMBERS];
 
 #endif

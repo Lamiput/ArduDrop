@@ -24,10 +24,6 @@
 #ifndef __PROTOCOL_H__
 #define __PROTOCOL_H__
 
-#include "ardudrop.h"
-
-// signals
-#define HANDSHAKE       "A"
 
 // commands
 #define CMD_SET         'S'
@@ -54,11 +50,6 @@
 class Command
 {
 private:
-  static bool initDone;
-  static char inputChar;
-  static char inputCmd[MAX_INPUT_SIZE];
-  static unsigned char inputIdx;
-  static void ParseCommand(char* cmd);
   static void processSetCommand();
   static void processResetCommand();
   static void processRunCommand();
@@ -68,8 +59,7 @@ private:
   static void processDebugLvlCommand();
 
 public:
-  static void Setup();
-  static void Loop();
+  static void ParseCommand(char* cmd);
 };
 
 
