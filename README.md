@@ -13,7 +13,7 @@ Therefore the configuration is send via this serial protocol
 
 All commands end with newline "\n"
 
-All times in milliseconds
+All times in microseconds
 
 ## Droplet Message Format
 Command          = SetCommand | RunCommand | HighCommand | LowCommand | InfoCommand | ClearCommand | CancelCommand 
@@ -89,9 +89,9 @@ Digit            = "0" | DigitWithoutZero ;
 
 ## Examples
 ### Setup
-S;1;V;300|50;370|20^740
+S;1;V;300000|50000;370000|20000^740000
 
-"Set Tasks for Valve at ArduinoPin 1: Open at 300ms for 50ms and at 370ms for 20ms"
+"Set ValveTasks for first device in devicelist: Open at 300ms for 50ms and at 370ms for 20ms"
 
 
 ### Run
@@ -103,7 +103,7 @@ R;1
 
 "Start 1 round"
 
-R;10;5000
+R;10;5000000
 
 "Start 10 rounds with 5 seconds delay"
 
