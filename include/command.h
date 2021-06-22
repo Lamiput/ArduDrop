@@ -18,36 +18,49 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Droplet. If not, see <http://www.gnu.org/licenses/>.
+ * along with ArduDrop. If not, see <http://www.gnu.org/licenses/>.
  *******************************************************************************/
 
-#ifndef __DROPLET_H__
-#define __DROPLET_H__
+#ifndef __PROTOCOL_H__
+#define __PROTOCOL_H__
 
 
-// TODO use bit masks for better performance
-struct Action {
-  unsigned short offset;    // ms                        // 2 bytes
-  unsigned char mode;       // pin mode (HIGH/LOW)       // 1 byte
-  unsigned char pin;        // pin # of device           // 1 byte
-  Action *next;             // pointer to next action    // 4 bytes
-};                                                       // 8 bytes
+// commands
+#define CMD_SET         'S'
+#define CMD_RESET       'X'
+#define CMD_RUN         'R'
+#define CMD_CANCEL      'C'
+#define CMD_INFO        'I'
+#define CMD_HIGH        'H'
+#define CMD_LOW         'L'
+#define CMD_DEBUGLEVEL  'D'
 
-struct Droplet {
-  Action *actions;  // pointer to first action           // 4 bytes
-  short startButton; // start button pin
+// separators
+#define FIELD_SEPARATOR   ";"
+#define TIME_SEPARATOR    "|"
+#define CHKSUM_SEPARATOR  "^"
+#define CMD_SEPARATOR     "\n"
+
+// devices
+#define DEVICE_VALVE    "V"
+#define DEVICE_FLASH    "F"
+#define DEVICE_CAMERA   "C"
+
+
+class Command
+{
+private:
+  static void processSetCommand();
+  static void processResetCommand();
+  static void processRunCommand();
+  static void processCancelCommand();
+  static void processInfoCommand();
+  static void processHighLowCommand(const unsigned char mode);
+  static void processDebugLvlCommand();
+
+public:
+  static void ParseCommand(char* cmd);
 };
-
-
-extern Droplet droplet;
-extern char deviceMapping[];
-
-
-void addActions(int deviceNumber, int offset, int duration);
-void addAction(Action *action);
-void executeActions();
-void clearActions();
-void printActions();
 
 
 #endif

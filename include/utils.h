@@ -18,21 +18,12 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Droplet. If not, see <http://www.gnu.org/licenses/>.
+ * along with ArduDrop. If not, see <http://www.gnu.org/licenses/>.
  *******************************************************************************/
- 
- 
-// return free RAM memory
-int freeMemory() {
-  int counter = 0;
-  byte *bytes;
 
-  // grab as much bytes as possible
-  while ( (bytes = (byte*) malloc (counter * sizeof(byte))) != NULL ) {
-    counter++;
-    free(bytes);
-  }
-  
-  free(bytes);
-  return counter;
-}
+#ifndef __UTILS_H__
+#define __UTILS_H__ 
+ 
+unsigned short freeMemory();
+
+#endif
